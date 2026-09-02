@@ -13,7 +13,9 @@ Microsoft Foundation Class 의 약자. C++ 기반의 윈도우 프로그래밍 �
 - Linux : Qt, GTK, wxWidgets ....
 - Windows : Qt, Win32API, ...
 
-리눅스와 윈도우가 OS 기반이 다르기때문에 초기에 표준화를 못함. Win32API 기반으로 GUI를 라이브러리화 -> MFC
+리눅스와 윈도우가 OS 기반이 다르기때문에 초기에 표준화를 못함. 
+
+Win32API 기반으로 GUI를 라이브러리화 -> Win32 API를 C++ 클래스로 감싸놓은 라이브러리
 
 윈도우에서만 동작하는 GUI 라이브러리 프레임워크임.
 
@@ -167,3 +169,255 @@ WndProc(
 ![](assets/20260901_123129_image.png)
 
 - MDI로 실행화면
+
+### MFC 기초 학습
+
+#### 기초 사상
+
+순수 Win32 컨트롤 생성 함수
+
+```cpp
+HWWD wnd = CreateWindow(...);
+```
+
+MFC는 각 컨트롤을 C_로 미리 만들어 놓음
+```cpp
+CWnd
+CDialog
+CButton
+CEdit
+CStatic
+```
+
+#### 대화상자 기반 앱
+
+- 애플리케이션 종류 대화 상자 기반(Dialog based) 선택
+
+    ![alt text](images/image.png)
+
+- 대화상자 기반으로 하면 대부분 옵션이 비활성화됨
+
+    ![alt text](images/image-1.png)
+
+- 시스템 메뉴, 정보 상자도 체크해제
+
+    ![alt text](images/image-2.png)
+
+- 고급 기능도 전부 해제
+
+    ![alt text](images/image-3.png)
+
+- 생성된 클래스 확인 후 마침
+
+    ![alt text](images/image-4.png)
+
+- 스캐폴딩 진행 후
+
+    ![alt text](images/image-5.png)
+
+##### 프로젝트 구성
+
+![alt text](images/image-6.png)
+
+- 프로그램 자체
+    - MFCBasic.h
+    - **MFCBasic.cpp** : 프로그램 시작점(EntryPoint)
+
+- 화면(Dialog) UI
+    - **MFCBasicDlg.h** : Dialog 클래스 선언 헤더 파일
+    - **MFCBasicDlg.cpp** : 화면 수정시 가장 많이 변경하는 파일
+
+- 리소스 UI
+    - **MFCBasic.rc** : 가장 중요한 리소스 파일. 다이얼로그 UI, 메뉴, 아이콘, 툴바, 문자열 테이블, 버전, 비트맵 등
+    - MFCBasic.rc2 : 사용 안함, 백업과 유사
+    - `Resource.h` : rc에 있는 리소스 ID를 정의
+    - MFCBasic.ico : 기본 아이콘 MFC 로고
+
+- MFC 공통 설정
+    - pch.h
+    - pch.cpp : Precompiled Header용 cpp. 수정 안함. VS가 사용하는 파일
+    - framework.h : 프로젝트 전체 사용하는 Windows 헤더 포함
+    - targetver.h : 지원할 Windows 버전 지정
+
+##### 디자인 화면
+
+리소스 뷰(Ctrl + Shift + E) 전환 뒤, Dialog의 IDD_MFCBASIC_DIALOG 클릭하면
+
+![alt text](images/image-7.png)
+
+![alt text](images/image-8.png)
+
+- 디자인 확인 가능
+
+- Dialog Based는 리소스에서 확인 가능하지만, SDI/MDI는 전체 화면을 확인할 메뉴/디자인 뷰가 없음
+
+    | 방식 | 의미 | 난이도 |
+    | --- | --- | ---: |
+    | Dialog Based | 일반 폼 형태 | ★ |
+    | SDI | 한 문서 중심 프로그램 | ★★★ |
+    | MDI | 여러 문서/창 관리 | ★★★★★ |
+
+##### CWinApp 클래스
+
+- MFCBasic.h 소스
+
+    ```cpp
+    class MFCBasicApp : public CWinApp
+    ```
+
+- CWinApp은 MFC가 제공하는 클래스이고 우리가 만든 CMFCBasicApp은 이를 상속한 자식 클래스
+
+##### WinMain이 없다! 대신 InitInstance() 가 중요!
+
+- MFC의 첫번째 핵심 요소! MFC에는 WinMain() 함수가 없음
+- MFC가 대신 처리한다
+
+    ```plaintext
+    # Win32 API
+
+    WinMin() 실행
+        ↓
+    윈도우 실행
+        ↓
+    메시지 루프
+        ↓
+    WndProc()
+    ```
+
+    ```plaintext
+    # MFC
+
+    MFC 내부 WinMain() 자동 실행
+        ↓
+    CWinApp
+        ↓
+    InitInstance()
+        ↓
+    Dialog 생성
+    ```
+
+- MFCBasic.cpp 소스
+
+    ```cpp
+    // MFC 프로그램 시작시 실행되는 초기화 함수
+    BOOL CMFCBasicApp::InitInstance()
+    {
+        CWinApp::InitInstance();    // 부모 객체도 초기화한다
+        ...
+    ```
+
+- WinMain() 에서 작성한 초기화 코드를 대부분 여기에 처리함
+
+##### CDialogEx 클래스
+
+- MFCBasicDlg.h 소스
+
+    ```cpp
+    class CMFCBasicDlg : public CDialogEx
+    {
+    // 생성입니다.
+    public:
+        CMFCBasicDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
+    ```
+
+- CWnd > CDialog > CDialogEx > CMFCBasicDlg
+
+##### Win32 API와 가장 큰 차이
+
+- Win32 API는 `HWND hwnd;` 라는 핸들을 중심으로 코딩
+- MFC는 `CMFCBasicDlg dlg;` C++ 객체로 코딩. 실제 MFC 내부에 HWND로 구성되어 있고, 이걸 MFC가 핸들링
+- MFC CWnd 는 Win32 API의 HWND를 C++ 클래스로 감싸 놓은 것일 뿐
+
+#### MFC로 컨트롤 구성하기
+
+##### 다이얼로그 리소스
+
+- 도구상자 오픈
+
+    ![alt text](images/image-9.png)
+
+- 버튼 추가
+
+    ![alt text](images/image-10.png)
+
+- 속성에서 
+
+    - ID : IDC_BUTTON_OK
+    - 캡션 : 확인
+
+- 확인 버튼을 더블클릭
+
+    ```cpp
+    void CMFCBasicDlg::OnBnClickedButtonOk()
+    {
+        // TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+        AfxMessageBox(L"헬로우 MFC!");
+    }
+    ```
+
+- TODO 영역을 작성하면 됨 -> C# WinForms, WPF와 동일
+
+- 실행결과
+
+    ![alt text](images/image-11.png)
+
+##### WM_COMMAND 가 없다
+
+- MFC의 Message Map에서 처리해 줌
+- MFCBasicDlg.cpp 소스
+    - 버튼을 추가하고 더블클릭해서 이벤트 함수가 생성되면 ON_BN_CLICKED... 자동 추가됨
+
+    ```cpp
+    BEGIN_MESSAGE_MAP(CMFCBasicDlg, CDialogEx)
+        ON_WM_PAINT()
+        ON_WM_QUERYDRAGICON()
+        ON_BN_CLICKED(IDC_BUTTON_OK, &CMFCBasicDlg::OnBnClickedButtonOk)
+    END_MESSAGE_MAP()
+    ```
+
+##### 장점
+
+```cpp
+case WM_COMMAND:
+    if (LOWORD(wParam) == 1001) {
+        MessageBox(
+        hwnd,
+        L"버튼을 클릭했습니다.",
+        L"알림",
+        MB_OKCANCEL
+        );
+    }
+    return 0;
+```
+
+- 위와 같이 쓴 코드를
+
+```cpp
+void CMFCBasicDlg::OnBnClickedButtonOk()
+{
+	AfxMessageBox(L"헬로우 MFC!");
+}
+```
+
+- C++ MFC로 위 코드만큼 줄였다는 것이 장점
+    - Win32 API -> WndProc + WM_MESSAGES + HWND
+    - MFC -> CDialogEx + Message Map + CButton
+
+##### MFC 학습 순서
+
+- [X] Dialog Based MFC
+- [X] CWinApp / CDialogEx 이해
+- [ ] Resource Editor
+- [ ] Button / Static / Edit / CheckBox / Radio Button 컨트롤 학습
+- [ ] 컨트롤 사용 간단 프로젝트
+- [ ] Message Map 이해
+- [ ] 이벤트 처리 방법 이해
+- [ ] 컨트롤 값 읽기 / 쓰기
+- [ ] DDX / DDV
+- [ ] Timer
+- [ ] 메뉴 / 파일 Dialog
+- [ ] SDI(Single Document Interface)
+- [ ] MDI(Multiple DI)
+- [ ] GDI(Graphic Device Interface) : 원, 사각형 그래픽 그리기
+- [ ] 스레드 등
+- [ ] 토이프로젝트 : 메모장(NotePad) 프로젝트
