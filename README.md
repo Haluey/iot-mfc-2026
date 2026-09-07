@@ -697,6 +697,171 @@ BOOL CMFCControlsDlg::OnInitDialog()
 
     ![alt text](images/image-26.png)
 
+#### Timer
+
+1초마다 시간이 변경되는 프로그램을 만들 때 사용하는 컨트롤
+
+##### 대화상자 기반 프로젝트
+
+- 사용자 인터페이스에서 두꺼운 프레임, 최소화 상자, 최대화 상자, 시스템 메뉴 선택
+    - 윈폼 UI와 유사하게 디자인
+
+    ![alt text](images/image-27.png)
+
+##### 타이머 예제
+
+- STATIC 2개 중 1개는 실제 시간표시 컨트롤 : IDC_STATIC_TIME -> DDX 컨트롤 m_staticTime 변수 추가
+- BUTTON 2개 시작, 정지 버튼 : IDC_BTN_START, IDC_BTN_STOP
+
+##### Timer ID 정의
+
+타이머를 여러개 지정 가능하므로 ID 지정
+
+`#define TIMER_CLOCK 1`
+
+##### 시작 버튼 함수
+
+메뉴 > 프로젝트 > 클래스 마법사 선택 
+
+![alt text](images/image-28.png)
+
+- 실제 MFC에서 클래스 추가 작업할 때 많이 사용하는 창
+
+##### WM_TIMER 메시지 추가
+
+- 클래스 마법사 창 메시지 탭에서 WM_TIMER 메시지 리스트에서 확인 후, 더블클릭
+- OnTimer 함수가 자동 추가됨
+
+##### 시작, 정지 버튼 함수 추가
+
+![alt text](images/image-29.png)
+
+##### IDC_STATIC_TIME 글자크기 변경
+
+- Dlg 헤더에 `CFont m_fontTime` 추가
+- OnInitDialog() 에서 초기화 로직 추가
+- 폰트 변경화면
+
+    ![alt text](images/image-30.png)
+
+#### 메뉴, 기본 Dialog
+
+##### 메뉴
+
+Dialog Based MFC에서는 적합하지 않음. SDI/MDI로 프로젝트 생성해야 함
+
+##### SDI 프로젝트 생성
+
+- 애플리케이션 종류 탭
+    - 단일 문서(SDI)
+    - 나머지는 기본으로
+
+- 문서 템플릿 속성
+    - 파일 확장명은 txt처럼 확장자만 (.은 안넣음)
+    - 필터 이름 변경
+
+- 사용자 인터페이스 기능 - 그대로
+- 고급 기능
+    - 자동화, ActiveX 컨트롤, Windows 소켓 거의 필요없음. 체크 해제
+
+    ![alt text](images/image-31.png)
+
+- 생성된 클래스 - 그대로
+
+- 실행결과
+
+    ![alt text](images/image-32.png)
+
+##### SDI 구조 이해
+
+MainFrame : 메뉴, 툴바, 뷰, 상태바 등 전체 관리
+
+##### SDI 프로젝트 구조
+
+![alt text](images/image-33.png)
+
+- 소스 파일
+    - ClassView.cpp : 왼쪽 클래스 뷰 창 만드는 코드
+    - FileView.cpp : 왼쪽 파일 뷰 창 만드는 코드
+    - MainFrm.cpp : SDI 가장 핵심 소스코드 ★★★★★
+    - MFCSdiMenuTest.cpp : 프로그램 시작 파일 ★★★★★
+    - MFCSdiMenuTestDoc.cpp : Document 클래스. 프로그램의 데이터 저장 ★★★
+    - MFCSdiMenuTestView.cpp : 개발 중에 가장 많이 수정하는 파일. 화면에 그림을 그리는 역할 ★★★★★
+    - OutputWnd.cpp : 뷰 중앙아래 빌드, 디버그, 찾기 창 생성 후 관리하는 코드
+    - pch.cpp : Precompiled Header 만드는 파일(기본)
+    - PropertiesWnd.cpp : 오른쪽 속성 창 만드는 코드
+    - ViewTree.cpp : 클래스, 파일 뷰의 트리 담당 코드
+
+- 헤더 파일
+    - ClassView.h
+    - FileView.h
+    - framework.h : 프로젝트 공통 헤더
+    - MainFrm.h
+    - MFCSdiMenuTest.h
+    - MFCSdiMenuTestDoc.h
+    - MFCSdiMenuTestView.h
+    - OutputWnd.h
+    - pch.h
+    - PropertiesWnd.h
+    - Resource.h : 프로젝트 리소스 아이디 ★★★
+    - targetver.h : 윈도우 타겟버전 설정
+    - ViewTree.h
+
+##### 창, 컨트롤 초기화 확인
+
+- MainFrm.cpp 내 OnCreate() 함수
+    - m_wndToolBar 관련 소스 주석 처리
+
+- 툴바 제거
+    
+    ![alt text](images/image-34.png)
+
+##### 파일뷰/클래스뷰 제거
+
+- MainFrm.h
+    - CFileView         m_wndFileView 주석처리
+	- CClassView        m_wndClassView 주석처리
+    - 도킹관련 void SetDockingWindowIcons(BOOL bHiColorIcons) 함수 주석처리
+
+- MainFrm.cpp
+    - OnCreate() 함수에 헤더파일에서 주석처리한 변수관련 오류코드 주석처리
+    - CreateDockingWindows() 함수 중 오류코드 주석처리
+    - SetDockingWindowIcons() 함수 주석처리
+
+##### 출력창, 속성창 제거
+
+- 위와 동일
+- 실행결과
+
+    ![alt text](images/image-35.png)
+
+##### SDI 심플프로젝트
+
+- 도킹, 복잡한 뷰가 필요없을 때 프로젝트를 간단하게 생성
+
+    ![alt text](images/image-36.png)
+
+- 문서/뷰 아키텍처 지원 체크해제
+- 비주얼 스타일 전환 사용 체크해제
+- 명령모음 > 클래식 메뉴 사용
+- 클래식 메뉴 옵션 > 도킹부분 선택 해제
+
+    ![alt text](images/image-37.png)
+
+##### 메뉴 리소스
+
+IDR_MAINFRAME 더블 클릭
+
+![alt text](images/image-38.png)
+
+- 메뉴 추가시 키보드 단축키(Alt) 사용 위해서 & 추가 `실습(&P)`
+
+
+
+
+
+
+
 
 
 
@@ -717,7 +882,7 @@ BOOL CMFCControlsDlg::OnInitDialog()
 - [X] 이벤트 처리 방법 이해
 - [X] 컨트롤 값 읽기 / 쓰기
 - [X] DDX / DDV
-- [ ] Timer
+- [X] Timer
 - [ ] 메뉴 / 파일 Dialog
 - [ ] SDI(Single Document Interface)
 - [ ] MDI(Multiple DI)
