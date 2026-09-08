@@ -791,6 +791,7 @@ MainFrame : 메뉴, 툴바, 뷰, 상태바 등 전체 관리
     - pch.cpp : Precompiled Header 만드는 파일(기본)
     - PropertiesWnd.cpp : 오른쪽 속성 창 만드는 코드
     - ViewTree.cpp : 클래스, 파일 뷰의 트리 담당 코드
+    - 문서/뷰 아키텍처 선택 시 - ClassView, FileView, MFCSdiMenuTestDoc, MFCSdiMenuTestView, OutputWnd, PropertiesWnd, ViewTree 7개 파일
 
 - 헤더 파일
     - ClassView.h
@@ -838,30 +839,212 @@ MainFrame : 메뉴, 툴바, 뷰, 상태바 등 전체 관리
 ##### SDI 심플프로젝트
 
 - 도킹, 복잡한 뷰가 필요없을 때 프로젝트를 간단하게 생성
+- 단일 문서, 문서/뷰 아키텍처 지원 체크해제
+- 비주얼 스타일 전환 사용 체크해제
 
     ![alt text](images/image-36.png)
 
-- 문서/뷰 아키텍처 지원 체크해제
-- 비주얼 스타일 전환 사용 체크해제
 - 명령모음 > 클래식 메뉴 사용
-- 클래식 메뉴 옵션 > 도킹부분 선택 해제
+- 클래식 메뉴 옵션 > 클래식 도킹 도구 모음 사용(툴바 생성)
 
     ![alt text](images/image-37.png)
 
+- 기능 축소로 만들어졌을 때 파일 구조
+    - ChildView.cpp : 메인프레임 중앙 관리 소스 ★★★★★
+    - MainFrm.cpp : 내용 생략 ★★★★★
+    - MFCSimpleSdi.cpp : 프로그램 시작점 ★★★★★
+    - pch.cpp, framework.h 등 : 위와 동일
+
+    ![alt text](images/image-39.png)
+
+#### MainFrame
+
+- MainFrm.cpp : 메뉴, 툴바, 상태바, ChildView 외 추가적 클래스뷰, 파일뷰, 출력창, 속성창을 관리하는 영역
+- PreCreateWindow() : 윈도우 창 만들어지기 직전 호출되는 함수. 기존 설정되어 있던 속성을 변경하고자 할 때
+- OnCreate() : 창 생성, 툴바 생성, 상태바 생성(추가적인 창도 생성)
+
+##### Menu 생성
+
+MainFrame에서 IDR_MAINFRAME 리소스 만들면 자동으로 생성
+
 ##### 메뉴 리소스
 
-IDR_MAINFRAME 더블 클릭
+IDR_MAINFRAME 더블 클릭(심플 프로젝트에서는 메뉴가 다름)
 
 ![alt text](images/image-38.png)
 
 - 메뉴 추가시 키보드 단축키(Alt) 사용 위해서 & 추가 `실습(&P)`
 
+    ![alt text](images/image-40.png)
 
+- 하위 메뉴 메시지 출력 추가
+- 메시지 출력 체크 속성창 ID_32771 -> ID_PRAC_MSG 로 변경
+- 이벤트를 추가하고자 하는 메뉴 > Context Menu > 이벤트 처리기 추가 클릭
 
+- 클래스 목록에서 ChildView나 CMainFrame 선택
 
+    ![alt text](images/image-41.png)
 
+- AfxMessageBox() 추가 결과
 
+    ![alt text](images/image-42.png)
 
+- 버튼 클릭이나 메뉴 클릭 등 메시지가 발생하는 기능들은 메시지맵에 자동 추가
+
+    ```cpp
+    BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
+        ON_WM_CREATE()
+        ON_WM_SETFOCUS()
+        ON_COMMAND(ID_PRAC_MSG, &CMainFrame::OnPracMsg)
+    END_MESSAGE_MAP()
+    ```
+
+- 체크 메뉴 아이디 `ID_MENU_CHECK`로 변경
+- 멤버 변수 추가 `bool m_bChecked = false`
+- 체크 메뉴 이벤트 처리기 추가
+
+    ```cpp
+    void CMainFrame::OnMenuCheck()
+    {
+        
+        CMenu* pMenu = GetMenu();
+
+        m_bChecked = !m_bChecked;
+
+        pMenu->CheckMenuItem(
+            ID_MENU_CHECK,
+            MF_BYCOMMAND |
+            (m_bChecked ? MF_CHECKED : MF_UNCHECKED)
+        );
+
+        // TODO : 체크가 되었을 때 처리로직과 체크해제 시 로직분리 작성
+    }
+    ```
+
+- 메뉴 체크기능 결과 화면
+
+    ![alt text](images/image-43.png)
+
+- 메뉴에 `-` 입력하면 가로줄 추가됨
+- 단축키는 추후 학습 필요(Accelerator > IDR_MAINFRAME 참고)
+
+##### ChildView
+
+- Win32 API에서 WM_PAINT와 같은 역할
+
+    ```cpp
+    void CChildView::OnPaint() 
+    {
+        CPaintDC dc(this); // 그리기를 위한 디바이스 컨텍스트입니다.
+        
+        // TODO: 여기에 메시지 처리기 코드를 추가합니다.
+        // 그리기 메시지에 대해서는 CWnd::OnPaint()를 호출하지 마십시오.
+
+        dc.TextOutW(100, 100, L"MFC ChildView");
+    }
+    ```
+
+- 실행 결과
+
+    ![alt text](images/image-44.png)
+
+##### GDI
+
+- 윈도우 앱에서 그림을 그리는 인터페이스 기능
+- OnPaint()에 진행
+
+    ```cpp
+    // GDI
+    dc.MoveTo(100, 80);	// 선이 시작할 위치로 이동
+    dc.LineTo(280, 80);	// 좌표까지 직선 그리기
+
+    dc.Rectangle(100, 140, 300, 320);
+    dc.Ellipse(100, 140, 300, 320);
+
+    CPen pen;   // 펜 생성
+    pen.CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
+
+    dc.SelectObject(&pen);  // 펜 선택
+
+    dc.MoveTo(100, 340);
+    dc.LineTo(280, 340);
+    ```
+
+- 실행결과
+
+    ![alt text](images/image-45.png)
+
+##### MFC 마우스/키보드
+
+- 마우스 메시지
+    - WM_LBUTTONDOWN -> OnLButtonnDown()
+    - WM_LBUTTONUP -> OnLButtonnUp()
+    - WM_MOUSEMOVE -> OnMouseMove()
+    - WM_MOUSEMOVE -> OnMouseMove()
+
+- 마우스 왼쪽 버튼 클릭이벤트 실행결과
+
+    ```cpp
+    void CChildView::OnLButtonDown(UINT nFlags, CPoint point) {
+        CString str;
+
+        str.Format(L"(%d, %d)", point.x, point.y);
+
+        AfxMessageBox(str);
+
+        CWnd::OnLButtonDown(nFlags, point);
+    }
+    ```
+
+    ![alt text](images/image-46.png)
+    
+- MouseMove 실행결과
+
+    ```cpp
+    void CChildView::OnMouseMove(UINT nFlags, CPoint point) {
+        CString str;
+
+        str.Format(L"x=%d, y=%d", point.x, point.y);
+        
+        GetParent()->SetWindowText(str);	// 부모창(MainFrame)의 제목표시줄에 str을 할당
+        
+        CWnd::OnMouseMove(nFlags, point);
+    }
+    ```
+
+    ![alt text](images/image-47.png)
+
+- 마우스 클릭 위치 저장변수 추가
+
+    ```cpp
+    private:
+	    Point m_ptClick;	// 클릭한 위치 기억 변수
+    ```
+
+- OnLButtonDown에 아래 코드 추가
+
+    ```cpp
+    m_ptClick = point;
+
+    Invalidate();	// 화면 다시그리기 요청 함수
+
+    CWnd::OnLButtonDown(nFlags, point);
+    ```
+
+- OnPaint() 아래 원그리기 함수 추가
+
+    ```cpp
+    dc.Ellipse(	// 마우스 클릭시마다 원 변경
+        m_ptClick.x - 30,
+        m_ptClick.y - 30,
+        m_ptClick.x + 30,
+        m_ptClick.y + 30
+    );
+    ```
+
+- 실행결과
+
+    TODO 동영상
 
 
 
@@ -883,8 +1066,8 @@ IDR_MAINFRAME 더블 클릭
 - [X] 컨트롤 값 읽기 / 쓰기
 - [X] DDX / DDV
 - [X] Timer
+- [X] SDI(Single Document Interface)
 - [ ] 메뉴 / 파일 Dialog
-- [ ] SDI(Single Document Interface)
 - [ ] MDI(Multiple DI)
 - [ ] GDI(Graphic Device Interface) : 원, 사각형 그래픽 그리기
 - [ ] 스레드 등
